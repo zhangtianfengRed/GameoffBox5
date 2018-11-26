@@ -130,53 +130,53 @@ public class map : MonoBehaviour {
             y,
         }
 
-        bool add(Vector2Int vector2Int,moveAxis axis)
+        Vector2Int add(Vector2Int vector2Int,moveAxis axis)
         {
             switch (axis)
             {
                 case (moveAxis.x):
                     if (vector2Int.x + 1<_map.GetLength(0)&& _map[vector2Int.x + 1, vector2Int.y].Box == null)
                     {
-                        return true;
+                        return Forward(vector2Int, axis);
                     }
                     break;
                 case (moveAxis.y):
                     if (vector2Int.y + 1<_map.GetLength(1)&&_map[vector2Int.x, vector2Int.y + 1].Box == null)
                     {
-                        return true;
+                        return Forward(vector2Int, axis);
                     }
                     break;
             }
-            return false;
+            return vector2Int;
         }
-        bool mun(Vector2Int vector2Int, moveAxis axis)
+        Vector2Int mun(Vector2Int vector2Int, moveAxis axis)
         {
             switch (axis)
             {
                 case (moveAxis.x):
                     if (vector2Int.x - 1>-1&&_map[vector2Int.x - 1, vector2Int.y].Box == null)
                     {
-                        return true;
+                        return Negative(vector2Int, axis);
                     }
                     break;
                 case (moveAxis.y):
                     if (vector2Int.y - 1>-1&&_map[vector2Int.x, vector2Int.y - 1].Box == null)
                     {
-                        return true;
+                        return Negative(vector2Int, axis);
                     }
                     break;
             }
-            return false;
+            throw new Exception("没有合适的位置");
         }
 
         public void moveup(BoxLevel _play)
         {
-            if (add(vector2int(_play.play.transform.position), moveAxis.y)&& 
-                vector2int(_play.play.transform.position).y< _map.GetLength(1))
+            if (vector2int(_play.play.transform.position).y< _map.GetLength(1))
             {
                 Vector2Int T = vector2int(_play.play.transform.position);
-                _map[T.x, T.y + 1].play = _play.play;
-                _play.play.transform.position = new Vector3Int(T.x, T.y + 1, -1);
+                Vector2Int target= add(vector2int(_play.play.transform.position), moveAxis.y);
+                _map[target.x, target.y].play = _play.play;
+                _play.play.transform.position = new Vector3Int(target.x, target.y, -1);
                 _map[T.x, T.y].play = null;
 
             }
@@ -184,41 +184,95 @@ public class map : MonoBehaviour {
 
         public void movedown(BoxLevel _play)
         {
-            if (mun(vector2int(_play.play.transform.position), moveAxis.y)&&
-                vector2int(_play.play.transform.position).y-1>-1)
+            if (vector2int(_play.play.transform.position).y-1>-1)
             {
                 Vector2Int T = vector2int(_play.play.transform.position);
-                _map[T.x, T.y - 1].play = _play.play;
-                _play.play.transform.position = new Vector3Int(T.x, T.y - 1,-1);
+                Vector2Int target = mun(vector2int(_play.play.transform.position), moveAxis.y);
+                _map[target.x, target.y].play = _play.play;
+                _play.play.transform.position = new Vector3Int(target.x,target.y, -1);
                 _map[T.x, T.y].play = null;
             }
         }
         public void moveleft(BoxLevel _play)
         {
-            if (mun(vector2int(_play.play.transform.position), moveAxis.x) &&
-                vector2int(_play.play.transform.position).x-1 > -1)
+            if (vector2int(_play.play.transform.position).x-1 > -1)
             {
                 Vector2Int T = vector2int(_play.play.transform.position);
-                _map[T.x - 1, T.y].play = _play.play;
-                _play.play.transform.position = new Vector3Int(T.x - 1, T.y, -1);
+                Vector2Int target = mun(vector2int(_play.play.transform.position), moveAxis.x);
+                _map[target.x, target.y].play = _play.play;
+                _play.play.transform.position = new Vector3Int(target.x, target.y, -1);
                 _map[T.x, T.y].play = null;
             }
         }
         public void moveright(BoxLevel _play)
         {
-            if (add(vector2int(_play.play.transform.position), moveAxis.x) &&
-                vector2int(_play.play.transform.position).x <_map.GetLength(0))
+            if (vector2int(_play.play.transform.position).x <_map.GetLength(0))
             {
                 Vector2Int T = vector2int(_play.play.transform.position);
-                _map[T.x + 1, T.y].play = _play.play;
-                _play.play.transform.position = new Vector3Int(T.x + 1, T.y, -1);
+                Vector2Int target = add(vector2int(_play.play.transform.position), moveAxis.x);
+                _map[target.x, target.y].play = _play.play;
+                _play.play.transform.position = new Vector3Int(target.x, target.y, -1);
                 _map[T.x, T.y].play = null;
             }
         }
         Vector2Int vector2int(Vector3 vector3)
         {
             return new Vector2Int((int)vector3.x, (int)vector3.y);
-        }       
+        }
+
+        Vector2Int Forward(Vector2Int ghostvector, moveAxis axis)
+        {
+            switch (axis)
+            {
+                case (moveAxis.x):
+
+                    for(int i = ghostvector.x; i < _map.GetLength(0); i++)
+                    {
+                        if (_map[i, ghostvector.y].Box != null)
+                        {
+                            return new Vector2Int(i-1, ghostvector.y);
+                        }
+                    }
+                    return new Vector2Int(_map.GetLength(0)-1, ghostvector.y);
+
+                case (moveAxis.y):
+
+                    for (int i = ghostvector.y; i < _map.GetLength(1); i++)
+                    {
+                        if (_map[ghostvector.x, i].Box != null)
+                        {
+                            return new Vector2Int(ghostvector.x, i-1);
+                        }
+                    }
+                    return new Vector2Int(ghostvector.x, _map.GetLength(1)-1);
+            }
+            throw new Exception("在计算终点坐标时出现未知错误");
+        }
+        Vector2Int Negative(Vector2Int ghostvector, moveAxis axis)
+        {
+            switch (axis)
+            {
+                case (moveAxis.x):
+                    for (int i = ghostvector.x; i > 0; i--)
+                    {
+                        if (_map[i, ghostvector.y].Box != null)
+                        {
+                            return new Vector2Int(i+1, ghostvector.y);
+                        }
+                    }
+                    return new Vector2Int(0, ghostvector.y);
+                case (moveAxis.y):
+                    for (int i = ghostvector.y; i > 0; i--)
+                    {
+                        if (_map[ghostvector.x, i].Box != null)
+                        {
+                            return new Vector2Int(ghostvector.x, i + 1);
+                        }
+                    }
+                    return new Vector2Int(ghostvector.x, 0);
+            }
+            throw new Exception("在计算终点坐标时出现未知错误");
+        }
 
     }
 
