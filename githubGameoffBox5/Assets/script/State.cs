@@ -6,8 +6,6 @@ using UnityEngine;
 
 namespace Assets.script
 {
-    class State
-    {
 
-    }
+
 }

@@ -16,6 +16,9 @@ public class map : MonoBehaviour {
     MoveAction moveAction;
 
     private BoxLevel boxLevel;
+    private State MoveState=State._Box;
+    Anim anim;
+
 
     // Use this for initialization
     void Start () {
@@ -30,7 +33,10 @@ public class map : MonoBehaviour {
         ForeachBox(BoxGroup);
         ForeachBox(TargetGroup);
         moveAction = new MoveAction(LevelData, _play(LevelData));
+        
         action = new Action(moveAction);
+        anim = new Anim(_play(LevelData));
+        moveAction.Moveanim = anim;
     }
 	
 	// Update is called once per frame
@@ -55,6 +61,11 @@ public class map : MonoBehaviour {
             Invoking invoking = new Invoking(new Movedown(action,_play(LevelData)));
             invoking.Exction();
         }
+        
+    }
+    void FixedUpdate()
+    {
+        anim.Anim_Move();
     }
     void ForeachBox(GameObject T)
     {
@@ -115,8 +126,10 @@ public class map : MonoBehaviour {
     }
     public class MoveAction
     {
+        public Anim Moveanim { get; set; }
         public BoxLevel[,] _map { get; set; }
         public BoxLevel _play { get; set; }
+        private IEnumerator coroutine;
 
         public MoveAction(BoxLevel[,] _map,BoxLevel _box)
         {
@@ -176,12 +189,13 @@ public class map : MonoBehaviour {
                 Vector2Int T = vector2int(_play.play.transform.position);
                 Vector2Int target= add(vector2int(_play.play.transform.position), moveAxis.y);
                 _map[target.x, target.y].play = _play.play;
-                _play.play.transform.position = new Vector3Int(target.x, target.y, -1);
+                //_play.play.transform.position = new Vector3Int(target.x, target.y, -1);
+                coroutine =Move_animtest(target);
+                StartCoroutine("Move_animtest", );
                 _map[T.x, T.y].play = null;
 
             }
         }
-
         public void movedown(BoxLevel _play)
         {
             if (vector2int(_play.play.transform.position).y-1>-1)
@@ -215,6 +229,15 @@ public class map : MonoBehaviour {
                 _map[T.x, T.y].play = null;
             }
         }
+
+        IEnumerator Move_animtest(Vector2Int target)
+        {
+            Moveanim.Target = new Vector3(target.x, target.y, -1);
+            Moveanim.playState = Anim.Play._Move;
+            Moveanim.playobject = _map[target.x, target.y];
+            yield return new WaitForFixedUpdate();
+        }
+
         Vector2Int vector2int(Vector3 vector3)
         {
             return new Vector2Int((int)vector3.x, (int)vector3.y);
@@ -297,6 +320,7 @@ public class map : MonoBehaviour {
         public BoxLevel Box= new BoxLevel();
         public command(Action action, BoxLevel box)
         {
+   
             this.action = action;
             Box = box;
         }
@@ -372,4 +396,61 @@ public class map : MonoBehaviour {
         }
     }
     #endregion
+
+    public enum State
+    {
+        _Box,
+        _Ghost,
+    }
+
+
+    public class Anim
+    {
+        public BoxLevel playobject { get; set; }
+        public Vector3 Target { get; set; }
+        public Play playState;
+        private Vector3 currentVelocity;
+        private float smoothTime;
+        public enum Play
+        {
+            _Move,
+            _Stay,
+        }
+
+        public Anim (BoxLevel boxLevel)
+        {
+            smoothTime = 2f;
+            playobject = boxLevel;
+            playState = Play._Stay;
+            Target = vectorint(playobject.play.transform.position);
+            currentVelocity = Vector3.zero;
+        }
+
+        public void Anim_Move()
+        {
+            if (playState == Play._Move)
+            {
+                playobject.play.transform.position = Vector3.SmoothDamp(vectorint(playobject.play.transform.position), Target, ref currentVelocity, smoothTime*Time.deltaTime);
+            }
+            //if (Eque())
+            //{
+            //    Debug.Log("Stop Move");
+            //    playState = Play._Stay;
+            //}
+        }
+        
+        public Vector3 vectorint(Vector3 _vector)
+        {
+            return new Vector3((int)_vector.x, (int)_vector.y,-1);
+        }
+
+        bool Eque()
+        {
+            if(vectorint(playobject.play.transform.position)== vectorint(Target))
+            {
+                return true;
+            }
+            return false;
+        }
+    }
 }
