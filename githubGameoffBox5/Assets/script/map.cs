@@ -189,9 +189,8 @@ public class map : MonoBehaviour {
                 Vector2Int T = vector2int(_play.play.transform.position);
                 Vector2Int target= add(vector2int(_play.play.transform.position), moveAxis.y);
                 _map[target.x, target.y].play = _play.play;
+                Move_animtest(target);
                 //_play.play.transform.position = new Vector3Int(target.x, target.y, -1);
-                coroutine =Move_animtest(target);
-                StartCoroutine("Move_animtest", );
                 _map[T.x, T.y].play = null;
 
             }
@@ -203,7 +202,9 @@ public class map : MonoBehaviour {
                 Vector2Int T = vector2int(_play.play.transform.position);
                 Vector2Int target = mun(vector2int(_play.play.transform.position), moveAxis.y);
                 _map[target.x, target.y].play = _play.play;
-                _play.play.transform.position = new Vector3Int(target.x,target.y, -1);
+                Debug.Log(target);
+                Move_animtest(target);
+                //_play.play.transform.position = new Vector3Int(target.x,target.y, -1);
                 _map[T.x, T.y].play = null;
             }
         }
@@ -214,7 +215,9 @@ public class map : MonoBehaviour {
                 Vector2Int T = vector2int(_play.play.transform.position);
                 Vector2Int target = mun(vector2int(_play.play.transform.position), moveAxis.x);
                 _map[target.x, target.y].play = _play.play;
-                _play.play.transform.position = new Vector3Int(target.x, target.y, -1);
+                //_play.play.transform.position = new Vector3Int(target.x, target.y, -1);
+                Debug.Log(target);
+                Move_animtest(target);
                 _map[T.x, T.y].play = null;
             }
         }
@@ -225,17 +228,19 @@ public class map : MonoBehaviour {
                 Vector2Int T = vector2int(_play.play.transform.position);
                 Vector2Int target = add(vector2int(_play.play.transform.position), moveAxis.x);
                 _map[target.x, target.y].play = _play.play;
-                _play.play.transform.position = new Vector3Int(target.x, target.y, -1);
+                //_play.play.transform.position = new Vector3Int(target.x, target.y, -1);
+                Debug.Log(target);
+                Move_animtest(target);
                 _map[T.x, T.y].play = null;
             }
         }
 
-        IEnumerator Move_animtest(Vector2Int target)
+        private void Move_animtest(Vector2Int target)
         {
+            Moveanim.playobject = _map[target.x, target.y];
             Moveanim.Target = new Vector3(target.x, target.y, -1);
             Moveanim.playState = Anim.Play._Move;
-            Moveanim.playobject = _map[target.x, target.y];
-            yield return new WaitForFixedUpdate();
+            Moveanim.smoothTime = 0f;
         }
 
         Vector2Int vector2int(Vector3 vector3)
@@ -409,8 +414,8 @@ public class map : MonoBehaviour {
         public BoxLevel playobject { get; set; }
         public Vector3 Target { get; set; }
         public Play playState;
-        private Vector3 currentVelocity;
-        private float smoothTime;
+        private Vector3 currentVelocity = Vector3.zero;
+        public float smoothTime;
         public enum Play
         {
             _Move,
@@ -419,34 +424,39 @@ public class map : MonoBehaviour {
 
         public Anim (BoxLevel boxLevel)
         {
-            smoothTime = 2f;
+            //smoothTime = 1f;
             playobject = boxLevel;
             playState = Play._Stay;
-            Target = vectorint(playobject.play.transform.position);
-            currentVelocity = Vector3.zero;
+            Target = Floorvectorint(playobject.play.transform.position);
         }
 
         public void Anim_Move()
         {
             if (playState == Play._Move)
             {
-                playobject.play.transform.position = Vector3.SmoothDamp(vectorint(playobject.play.transform.position), Target, ref currentVelocity, smoothTime*Time.deltaTime);
+                smoothTime += 2f * Time.deltaTime;
+                playobject.play.transform.position = Vector3.Lerp(Floorvectorint(playobject.play.transform.position), Target, smoothTime);
             }
-            //if (Eque())
-            //{
-            //    Debug.Log("Stop Move");
-            //    playState = Play._Stay;
-            //}
+            if (Eque())
+            {
+                //Debug.Log(playState);
+                playState = Play._Stay;
+            }
         }
-        
-        public Vector3 vectorint(Vector3 _vector)
+        //向上取整
+        public Vector3 Ceilvectorint(Vector3 _vector)
         {
-            return new Vector3((int)_vector.x, (int)_vector.y,-1);
+            return new Vector3(Mathf.CeilToInt( _vector.x), Mathf.CeilToInt(_vector.y),-1);
+        }
+        //向下取整
+        public Vector3 Floorvectorint(Vector3 _vector)
+        {
+            return new Vector3(Mathf.Round(_vector.x), Mathf.Round(_vector.y), -1);
         }
 
         bool Eque()
         {
-            if(vectorint(playobject.play.transform.position)== vectorint(Target))
+            if(Floorvectorint(playobject.play.transform.position)== Floorvectorint(Target))
             {
                 return true;
             }
