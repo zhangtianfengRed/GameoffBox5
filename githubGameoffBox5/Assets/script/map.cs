@@ -189,6 +189,7 @@ public class map : MonoBehaviour {
                 Vector2Int T = vector2int(_play.play.transform.position);
                 Vector2Int target= add(vector2int(_play.play.transform.position), moveAxis.y);
                 _map[target.x, target.y].play = _play.play;
+                Debug.Log(target);
                 Move_animtest(target);
                 //_play.play.transform.position = new Vector3Int(target.x, target.y, -1);
                 _map[T.x, T.y].play = null;
@@ -245,7 +246,7 @@ public class map : MonoBehaviour {
 
         Vector2Int vector2int(Vector3 vector3)
         {
-            return new Vector2Int((int)vector3.x, (int)vector3.y);
+            return new Vector2Int(Mathf.CeilToInt( vector3.x), Mathf.CeilToInt(vector3.y));
         }
 
         Vector2Int Forward(Vector2Int ghostvector, moveAxis axis)
@@ -451,7 +452,7 @@ public class map : MonoBehaviour {
         //向下取整
         public Vector3 Floorvectorint(Vector3 _vector)
         {
-            return new Vector3(Mathf.Round(_vector.x), Mathf.Round(_vector.y), -1);
+            return new Vector3(_vector.x, _vector.y, -1);
         }
 
         bool Eque()
