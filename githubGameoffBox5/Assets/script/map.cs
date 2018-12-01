@@ -32,10 +32,10 @@ public class map : MonoBehaviour {
         StartBoxlevel(LevelData);
         ForeachBox(BoxGroup);
         ForeachBox(TargetGroup);
-        moveAction = new MoveAction(LevelData, _play(LevelData));
+        moveAction = new MoveAction(LevelData);
         
         action = new Action(moveAction);
-        anim = new Anim(_play(LevelData));
+        anim = new Anim(_play(LevelData).play);
         moveAction.Moveanim = anim;
     }
 	
@@ -104,6 +104,7 @@ public class map : MonoBehaviour {
         {
             if (i != null && i.play != null)
             {
+                Debug.Log(i.play.name);
                 return i;
             }
         }
@@ -128,13 +129,11 @@ public class map : MonoBehaviour {
     {
         public Anim Moveanim { get; set; }
         public BoxLevel[,] _map { get; set; }
-        public BoxLevel _play { get; set; }
-        private IEnumerator coroutine;
+        public BoxLevel Play { get; set; }
 
-        public MoveAction(BoxLevel[,] _map,BoxLevel _box)
+        public MoveAction(BoxLevel[,] _map)
         {
             this._map = _map;
-            this._play = _box;
         }
         
         enum moveAxis
@@ -148,13 +147,13 @@ public class map : MonoBehaviour {
             switch (axis)
             {
                 case (moveAxis.x):
-                    if (vector2Int.x + 1<_map.GetLength(0)&& _map[vector2Int.x + 1, vector2Int.y].Box == null)
+                    if (vector2Int.x<_map.GetLength(0))
                     {
                         return Forward(vector2Int, axis);
                     }
                     break;
                 case (moveAxis.y):
-                    if (vector2Int.y + 1<_map.GetLength(1)&&_map[vector2Int.x, vector2Int.y + 1].Box == null)
+                    if (vector2Int.y<_map.GetLength(1))
                     {
                         return Forward(vector2Int, axis);
                     }
@@ -167,15 +166,55 @@ public class map : MonoBehaviour {
             switch (axis)
             {
                 case (moveAxis.x):
-                    if (vector2Int.x - 1>-1&&_map[vector2Int.x - 1, vector2Int.y].Box == null)
+                    if (vector2Int.x >0)
                     {
                         return Negative(vector2Int, axis);
                     }
                     break;
                 case (moveAxis.y):
-                    if (vector2Int.y - 1>-1&&_map[vector2Int.x, vector2Int.y - 1].Box == null)
+                    if (vector2Int.y >0)
                     {
                         return Negative(vector2Int, axis);
+                    }
+                    break;
+            }
+            return vector2Int;
+        }
+
+        //Ghost寻找坐标
+        Vector2Int Ghostadd(Vector2Int vector2Int, moveAxis axis)
+        {
+            switch (axis)
+            {
+                case (moveAxis.x):
+                    if (vector2Int.x + 1 < _map.GetLength(0))
+                    {
+                        return GhostForward(vector2Int, axis);
+                    }
+                    break;
+                case (moveAxis.y):
+                    if (vector2Int.y + 1 < _map.GetLength(1))
+                    {
+                        return GhostForward(vector2Int, axis);
+                    }
+                    break;
+            }
+            return vector2Int;
+        }
+        Vector2Int Ghostmun(Vector2Int vector2Int, moveAxis axis)
+        {
+            switch (axis)
+            {
+                case (moveAxis.x):
+                    if (vector2Int.x - 1 > -1 && _map[vector2Int.x - 1, vector2Int.y].Box == null)
+                    {
+                        return GhostNegative(vector2Int, axis);
+                    }
+                    break;
+                case (moveAxis.y):
+                    if (vector2Int.y - 1 > -1 && _map[vector2Int.x, vector2Int.y - 1].Box == null)
+                    {
+                        return GhostNegative(vector2Int, axis);
                     }
                     break;
             }
@@ -184,69 +223,140 @@ public class map : MonoBehaviour {
 
         public void moveup(BoxLevel _play)
         {
-            if (vector2int(_play.play.transform.position).y< _map.GetLength(1))
+            if(GhostBox()== State._Box)
             {
-                Vector2Int T = vector2int(_play.play.transform.position);
-                Vector2Int target= add(vector2int(_play.play.transform.position), moveAxis.y);
-                _map[target.x, target.y].play = _play.play;
-                Debug.Log(target);
-                Move_animtest(target);
-                //_play.play.transform.position = new Vector3Int(target.x, target.y, -1);
-                _map[T.x, T.y].play = null;
-
+                if (Floorvector2int(_play.play.transform.position).y < _map.GetLength(1))
+                {
+                    Vector2Int T = Floorvector2int(_play.play.transform.position);
+                    Vector2Int target = add(Floorvector2int(_play.play.transform.position), moveAxis.y);
+                    Debug.Log(target);
+                    _map[target.x, target.y].play = _play.play;
+                    Play = _map[target.x, target.y];                    
+                    FloorMove_animtest(target);
+                    //_play.play.transform.position = new Vector3Int(target.x, target.y, -1);
+                    _map[T.x, T.y].play = null;
+                }
+            }
+            if (GhostBox() == State._Ghost)
+            {
+                Debug.Log("Error");
             }
         }
+
         public void movedown(BoxLevel _play)
         {
-            if (vector2int(_play.play.transform.position).y-1>-1)
+            if (GhostBox() == State._Box)
             {
-                Vector2Int T = vector2int(_play.play.transform.position);
-                Vector2Int target = mun(vector2int(_play.play.transform.position), moveAxis.y);
-                _map[target.x, target.y].play = _play.play;
-                Debug.Log(target);
-                Move_animtest(target);
-                //_play.play.transform.position = new Vector3Int(target.x,target.y, -1);
-                _map[T.x, T.y].play = null;
+                if (Ceilingvector2int(_play.play.transform.position).y - 1 > -1)
+                {
+                    Vector2Int T = Ceilingvector2int(_play.play.transform.position);
+                    Vector2Int target = mun(Ceilingvector2int(_play.play.transform.position), moveAxis.y);
+                    _map[target.x, target.y].play = _play.play;
+                    Play = _map[target.x, target.y];
+                    Debug.Log(target);
+                    CeilMove_animtest(target);
+                    //_play.play.transform.position = new Vector3Int(target.x,target.y, -1);
+                    _map[T.x, T.y].play = null;
+                }
             }
+            if (GhostBox() == State._Ghost)
+            {
+
+            }
+
         }
         public void moveleft(BoxLevel _play)
         {
-            if (vector2int(_play.play.transform.position).x-1 > -1)
+            if (GhostBox() == State._Box)
             {
-                Vector2Int T = vector2int(_play.play.transform.position);
-                Vector2Int target = mun(vector2int(_play.play.transform.position), moveAxis.x);
-                _map[target.x, target.y].play = _play.play;
-                //_play.play.transform.position = new Vector3Int(target.x, target.y, -1);
-                Debug.Log(target);
-                Move_animtest(target);
-                _map[T.x, T.y].play = null;
+                if (Ceilingvector2int(_play.play.transform.position).x > -1)
+                {
+                    Vector2Int T = Ceilingvector2int(_play.play.transform.position);
+                    Vector2Int target = mun(Ceilingvector2int(_play.play.transform.position), moveAxis.x);
+                    _map[target.x, target.y].play = _play.play;
+                    Play = _map[target.x, target.y];
+                    //_play.play.transform.position = new Vector3Int(target.x, target.y, -1);
+                    Debug.Log(target);
+                    CeilMove_animtest(target);
+                    _map[T.x, T.y].play = null;
+                }
+            }
+            if (GhostBox() == State._Ghost)
+            {
+
             }
         }
         public void moveright(BoxLevel _play)
         {
-            if (vector2int(_play.play.transform.position).x <_map.GetLength(0))
+            if (GhostBox() == State._Box)
             {
-                Vector2Int T = vector2int(_play.play.transform.position);
-                Vector2Int target = add(vector2int(_play.play.transform.position), moveAxis.x);
-                _map[target.x, target.y].play = _play.play;
-                //_play.play.transform.position = new Vector3Int(target.x, target.y, -1);
-                Debug.Log(target);
-                Move_animtest(target);
-                _map[T.x, T.y].play = null;
+                if (Floorvector2int(_play.play.transform.position).x < _map.GetLength(0))
+                {
+                    Vector2Int T = Floorvector2int(_play.play.transform.position);
+                    Vector2Int target = add(Floorvector2int(_play.play.transform.position), moveAxis.x);
+                    _map[target.x, target.y].play = _play.play;
+                    Play = _map[target.x, target.y];
+                    //_play.play.transform.position = new Vector3Int(target.x, target.y, -1);
+                    Debug.Log(target);
+                    FloorMove_animtest(target);
+                    _map[T.x, T.y].play = null;
+                }
             }
+            if (GhostBox() == State._Ghost)
+            {                                
+                Vector2Int target = Ghostadd(Floorvector2int(_play.play.transform.position), moveAxis.x);
+                GameObject Z = _map[target.x, target.y].Box;
+
+                _map[target.x, target.y].play = Z;
+                _map[target.x, target.y].play.tag = "play";
+                _map[target.x, target.y].Box = null;
+
+
+                GameObject V = Play.play;
+                Play .Box= V;
+                _play.Box.tag = "box";
+                Play.play = null;
+                Play = _map[target.x, target.y];
+            }
+
+        }
+        private State GhostBox()
+        {
+            switch (Moveanim.playState)
+            {
+                case (Anim.Play._Stay):
+                    return State._Box;
+                case (Anim.Play._MoveCeil):
+                    return State._Ghost;
+                case (Anim.Play._MoveFloor):
+                    return State._Ghost;
+            }
+            throw new Exception("返回状态出错！");
         }
 
-        private void Move_animtest(Vector2Int target)
+        private void CeilMove_animtest(Vector2Int target)
         {
-            Moveanim.playobject = _map[target.x, target.y];
+            Moveanim.playobject = _map[target.x, target.y].play;
             Moveanim.Target = new Vector3(target.x, target.y, -1);
-            Moveanim.playState = Anim.Play._Move;
+            Moveanim.playState = Anim.Play._MoveCeil;
             Moveanim.smoothTime = 0f;
         }
-
-        Vector2Int vector2int(Vector3 vector3)
+        private void FloorMove_animtest(Vector2Int target)
+        {
+            Moveanim.playobject = _map[target.x, target.y].play;
+            Moveanim.Target = new Vector3(target.x, target.y, -1);
+            Moveanim.playState = Anim.Play._MoveFloor;
+            Moveanim.smoothTime = 0f;
+        }
+        //向上取整
+        Vector2Int Ceilingvector2int(Vector3 vector3)
         {
             return new Vector2Int(Mathf.CeilToInt( vector3.x), Mathf.CeilToInt(vector3.y));
+        }
+        //向下取整
+        Vector2Int Floorvector2int(Vector3 vector3)
+        {
+            return new Vector2Int(Mathf.FloorToInt(vector3.x), Mathf.FloorToInt(vector3.y));
         }
 
         Vector2Int Forward(Vector2Int ghostvector, moveAxis axis)
@@ -255,7 +365,7 @@ public class map : MonoBehaviour {
             {
                 case (moveAxis.x):
 
-                    for(int i = ghostvector.x; i < _map.GetLength(0); i++)
+                    for(int i = ghostvector.x + 1; i < _map.GetLength(0); i++)
                     {
                         if (_map[i, ghostvector.y].Box != null)
                         {
@@ -266,7 +376,7 @@ public class map : MonoBehaviour {
 
                 case (moveAxis.y):
 
-                    for (int i = ghostvector.y; i < _map.GetLength(1); i++)
+                    for (int i = ghostvector.y + 1; i < _map.GetLength(1); i++)
                     {
                         if (_map[ghostvector.x, i].Box != null)
                         {
@@ -282,19 +392,21 @@ public class map : MonoBehaviour {
             switch (axis)
             {
                 case (moveAxis.x):
-                    for (int i = ghostvector.x; i > 0; i--)
+                    for (int i = ghostvector.x-1; i >-1; i--)
                     {
                         if (_map[i, ghostvector.y].Box != null)
                         {
+                            Debug.Log(i + 1);
                             return new Vector2Int(i+1, ghostvector.y);
                         }
                     }
                     return new Vector2Int(0, ghostvector.y);
                 case (moveAxis.y):
-                    for (int i = ghostvector.y; i > 0; i--)
+                    for (int i = ghostvector.y-1; i > -1; i--)
                     {
                         if (_map[ghostvector.x, i].Box != null)
                         {
+                            Debug.Log(i + 1);
                             return new Vector2Int(ghostvector.x, i + 1);
                         }
                     }
@@ -303,6 +415,60 @@ public class map : MonoBehaviour {
             throw new Exception("在计算终点坐标时出现未知错误");
         }
 
+        //计算Ghost的附身对象
+        Vector2Int GhostForward(Vector2Int ghostvector, moveAxis axis)
+        {
+            switch (axis)
+            {
+                case (moveAxis.x):
+
+                    for (int i = ghostvector.x; i < _map.GetLength(0); i++)
+                    {
+                        if (_map[i, ghostvector.y].Box != null)
+                        {                          
+                            return new Vector2Int(i, ghostvector.y);
+                        }
+                    }
+                    return new Vector2Int(_map.GetLength(0) - 1, ghostvector.y);
+
+                case (moveAxis.y):
+
+                    for (int i = ghostvector.y; i < _map.GetLength(1); i++)
+                    {
+                        if (_map[ghostvector.x, i].Box != null)
+                        {
+                            return new Vector2Int(ghostvector.x, i);
+                        }
+                    }
+                    return new Vector2Int(ghostvector.x, _map.GetLength(1) - 1);
+            }
+            throw new Exception("在计算终点坐标时出现未知错误");
+        }
+        Vector2Int GhostNegative(Vector2Int ghostvector, moveAxis axis)
+        {
+            switch (axis)
+            {
+                case (moveAxis.x):
+                    for (int i = ghostvector.x; i > 0; i--)
+                    {
+                        if (_map[i, ghostvector.y].Box != null)
+                        {
+                            return new Vector2Int(i, ghostvector.y);
+                        }
+                    }
+                    return new Vector2Int(0, ghostvector.y);
+                case (moveAxis.y):
+                    for (int i = ghostvector.y; i > 0; i--)
+                    {
+                        if (_map[ghostvector.x, i].Box != null)
+                        {
+                            return new Vector2Int(ghostvector.x, i);
+                        }
+                    }
+                    return new Vector2Int(ghostvector.x, 0);
+            }
+            throw new Exception("在计算终点坐标时出现未知错误");
+        }
     }
 
     //调用者
@@ -357,6 +523,7 @@ public class map : MonoBehaviour {
         public Action(MoveAction moveAction)
         {
             this.moveAction = moveAction;
+            
         }
     }
 
@@ -412,33 +579,39 @@ public class map : MonoBehaviour {
 
     public class Anim
     {
-        public BoxLevel playobject { get; set; }
+        public GameObject playobject { get; set; }
         public Vector3 Target { get; set; }
         public Play playState;
         private Vector3 currentVelocity = Vector3.zero;
         public float smoothTime;
         public enum Play
         {
-            _Move,
+            _MoveCeil,
+            _MoveFloor,
             _Stay,
         }
 
-        public Anim (BoxLevel boxLevel)
+        public Anim (GameObject boxLevel)
         {
             //smoothTime = 1f;
             playobject = boxLevel;
             playState = Play._Stay;
-            Target = Floorvectorint(playobject.play.transform.position);
+            Target = Floorvectorint(playobject.transform.position);
         }
 
         public void Anim_Move()
         {
-            if (playState == Play._Move)
+            if (playState == Play._MoveCeil)
             {
-                smoothTime += 2f * Time.deltaTime;
-                playobject.play.transform.position = Vector3.Lerp(Floorvectorint(playobject.play.transform.position), Target, smoothTime);
+                smoothTime += 0.5f * Time.deltaTime;
+                playobject.transform.position = Vector3.Lerp(Ceilvectorint(playobject.transform.position), Target, smoothTime);
             }
-            if (Eque())
+            if (playState == Play._MoveFloor)
+            {
+                smoothTime += 0.5f * Time.deltaTime;
+                playobject.transform.position = Vector3.Lerp(Floorvectorint(playobject.transform.position), Target, smoothTime);
+            }
+            if (Eque(playState))
             {
                 //Debug.Log(playState);
                 playState = Play._Stay;
@@ -452,15 +625,27 @@ public class map : MonoBehaviour {
         //向下取整
         public Vector3 Floorvectorint(Vector3 _vector)
         {
-            return new Vector3(_vector.x, _vector.y, -1);
+            return new Vector3(Mathf.Floor(_vector.x), Mathf.Floor(_vector.y), -1);
         }
 
-        bool Eque()
+        bool Eque(Play T)
         {
-            if(Floorvectorint(playobject.play.transform.position)== Floorvectorint(Target))
+            switch (T)
             {
-                return true;
+                case (Play._MoveCeil):
+                    if (Ceilvectorint(playobject.transform.position) == Ceilvectorint(Target))
+                    {
+                        return true;
+                    }
+                    break;
+                case (Play._MoveFloor):
+                    if (Floorvectorint(playobject.transform.position) == Floorvectorint(Target))
+                    {
+                        return true;
+                    }
+                    break;
             }
+
             return false;
         }
     }
